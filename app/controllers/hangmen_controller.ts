@@ -27,6 +27,7 @@ export default class HangmenController {
     }
 
     public async empezar({ request, response }: HttpContext) {
+
         // Obtener las cookies
         const palabra = request.cookie('palabra')
         let intentos = parseInt(request.cookie('intentos'), 10)
