@@ -11,7 +11,6 @@ export default class HangmenController {
 
         if (palabra) {
             if (jugar) {
-
                 const letrasEnviadas: string[] = []
                 let intentos = 6
                 let progreso = ''
@@ -28,7 +27,6 @@ export default class HangmenController {
                             intentos -= 1
                         }
                     }
-
                 })
 
                 for (let i = 0; i < palabra.length; i++) {
@@ -55,13 +53,11 @@ export default class HangmenController {
                         letrasEnviadas,
                     })
                 }
-
             } else {
                 return response.status(200).json({
                     "mensaje": "El juego ha comenzado!",
                 })
             }
-
         } else {
             return response.status(404).json({
                 error: 'Palabra no encontrada'
