@@ -2,6 +2,6 @@ import vine from '@vinejs/vine'
 
 export const hangmanValidator = vine.compile(
     vine.object({
-      letra: vine.string().maxLength(1)
+      letras: vine.array(vine.string().minLength(1))
     })
 )

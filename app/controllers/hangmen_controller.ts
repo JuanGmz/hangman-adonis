@@ -3,95 +3,68 @@ import { hangmanValidator } from '#validators/hangman'
 
 export default class HangmenController {
 
-    public async hangman({ response }: HttpContext) {
-        // Generar una palabra aleatoria
+    public async jugar({ response, params, request }: HttpContext) {
         const palabras = ['javascript', 'python', 'java', 'php', 'c++', 'c#', 'ruby', 'go', 'swift', 'kotlin']
-        const indiceAleatorio = Math.floor(Math.random() * palabras.length)
-        const palabra: String = palabras[indiceAleatorio]
+        const indice: number = parseInt(params.indice)
+        const palabra = palabras[indice]
+        const jugar: boolean = params.jugar
 
-        // Seleccionar el número de intentos
-        const intentos: number = 5
+        if (palabra) {
+            if (jugar) {
 
-        // Array para las letras acertadas
-        const letrasAcertadas: String[] = []
+                const letrasEnviadas: string[] = []
+                let intentos = 6
+                let progreso = ''
 
-        // Enviar las cookies
-        response.cookie('palabra', palabra)
-        response.cookie('intentos', intentos)
-        response.cookie('letrasAcertadas', JSON.stringify(letrasAcertadas))
+                const { letras } = request.all()
 
-        // Mensaje de inicio al juego
-        return response.status(200).json({
-            "mensaje": "El juego comenzó",
-        })
-    }
+                await hangmanValidator.validate({ letras })
 
-    public async empezar({ request, response }: HttpContext) {
+                letras.forEach((letra: string) => {
+                    if (!letrasEnviadas.includes(letra)) {
+                        letrasEnviadas.push(letra)
 
-        // Obtener las cookies
-        const palabra = request.cookie('palabra')
-        let intentos = parseInt(request.cookie('intentos'), 10)
-        let letrasAcertadas = JSON.parse(request.cookie('letrasAcertadas') || '[]')
+                        if (!palabra.includes(letra)) {
+                            intentos -= 1
+                        }
+                    }
 
-        // Variable para mostrar el progreso
-        let progreso = ''
+                })
 
-        // Extraer solo el valor de la letra
-        const { letra } = request.all()
+                for (let i = 0; i < palabra.length; i++) {
+                    if (letrasEnviadas.includes(palabra[i])) {
+                        progreso += palabra[i]
+                    } else {
+                        progreso += "-"
+                    }
+                }
 
-        // Validar que la letra sea válida
-        await hangmanValidator.validate({ letra })
+                if (progreso === palabra) {
+                    return response.status(200).json({
+                        message: 'Ganaste!',
+                        palabra
+                    })
+                } else if (intentos === 0) {
+                    return response.status(200).json({
+                        message: 'Perdiste!' + ' La palabra era: ' + palabra,
+                    })
+                } else {
+                    return response.status(200).json({
+                        progreso,
+                        intentos,
+                        letrasEnviadas,
+                    })
+                }
 
-        if (letra) {
-            // Verificar si la letra ya fue acertada, si no fue acertada se agrega en el array de letras acertadas
-            if (!letrasAcertadas.includes(letra)) {
-                letrasAcertadas.push(letra)
-            }
-
-            // Verificar si la letra está en la palabra de lo contrario resta un intento
-            if (!palabra.includes(letra)) {
-                intentos -= 1
-            }
-        }
-
-        // Recorrer la palabra para concatenar la palabra adivinada o el guion
-        for (let i = 0; i < palabra.length; i++) {
-            // Si la letra ya fue adivinada, mostrarla
-            if (letrasAcertadas.includes(palabra[i])) {
-                progreso += palabra[i]
             } else {
-                // Si no, mostrar un guion
-                progreso += "-"
+                return response.status(200).json({
+                    "mensaje": "El juego ha comenzado!",
+                })
             }
-        }
 
-        // Si la palabra ya fue adivinada, mostrar el mensaje de ganaste
-        if (progreso === palabra) {
-            // Enviar las cookies
-            response.cookie('palabra', palabra)
-            response.cookie('intentos', intentos)
-            response.cookie('letrasAcertadas', JSON.stringify(letrasAcertadas))
-            return response.status(200).json({
-                "mensaje": "Ganaste en el intento: " + intentos,
-                "palabra" : palabra,
-                "letras enviadas": letrasAcertadas,
-            })
-        } else if (intentos <= 0) {
-            response.cookie('palabra', palabra)
-            response.cookie('intentos', intentos)
-            response.cookie('letrasAcertadas', JSON.stringify(letrasAcertadas))
-            return response.status(200).json({
-                "mensaje" : "Perdiste",
-                "palabra" : palabra
-            })
         } else {
-            response.cookie('palabra', palabra)
-            response.cookie('intentos', intentos)
-            response.cookie('letrasAcertadas', JSON.stringify(letrasAcertadas))
-            return response.status(200).json({
-                "progreso": progreso,
-                "intentos": intentos,
-                "letras enviadas": letrasAcertadas
+            return response.status(404).json({
+                error: 'Palabra no encontrada'
             })
         }
     }
